@@ -280,6 +280,7 @@ class Branch{
   
   int minBr = 50;
   int maxBr = 90;
+  
   Branch(){
     verticies[0] = new PVector(0,0);
     verticies[1] = new PVector(0,0);
@@ -310,33 +311,6 @@ class Branch{
     sat = 0;
     br = (int)random(minBr,maxBr);
     alph = 255;
-  }
-
-  Branch(PVector startPoint, PVector direction, PVector height, PVector fatness){
-    
-    verticies[2] = new PVector(startPoint.x + height*cos(direction),startPoint.y + height*sin(direction));
-
-    float breadth = fatness*height;
-    verticies[0] = new PVector(startPoint.x - breadth*sin(direction),startPoint.y + breadth*cos(direction));
-    verticies[1] = new PVector(startPoint.x + breadth*sin(direction),startPoint.y - breadth*cos(direction));
-    
-    //initialized eased verticies as blanks
-    easedVerticies[0] = new PVector(0,0);
-    easedVerticies[1] = new PVector(0,0);
-    easedVerticies[2] = new PVector(0,0);
-    
-    hu = 0;
-    sat = 0;
-    br = (int)random(minBr,maxBr);
-    alph = 255;
-  }
-
-  public PVector getStartingPoint(){
-    return new PVector(lerp(verticies[0].x, verticies[1].x, 0.5),lerp(verticies[0].y, verticies[1].y, 0.5));
-  }
-
-  public float getDir(){
-    return atan2(verticies[1].x-verticies[0].x, verticies[0].y-verticies[1].y);
   }
   
   public void setPos(float oX, float oY, float w, float h, float easedDist){
@@ -454,7 +428,6 @@ class Branch{
     }
   }
 }
-
 class Layer {
   public int numSides;
   int startVertex;
@@ -481,28 +454,13 @@ class Layer {
       float bX = (layerWidth/2) + (layerWidth/2 - ringWeight/2) * cos((TWO_PI/numSides)*(startVertex-1));
       float bY = (layerHeight/2) + (layerHeight/2 - ringWeight/2) * sin((TWO_PI/numSides)*(startVertex-1));
 
-
-      // KUBA
-      // 
       tree = new Tree(11, new Branch(
       new PVector(aX, aY), 
       new PVector(bX, bY), 
       new PVector(lerp(aX, layerWidth/2, 0.7), lerp(aY, layerHeight/2, 0.7))));
-      int numBranchesIn = 4;
-      int numSplitsIn = 1;
-      float crookednessIn = 0.15;
-      float fatnessIn = 0.1;
-      // tree = new Tree();
-      tree.setParamTree(numBranchesIn, numSplitsIn, crookednessIn, fatnessIn, layerWidth, layerHeight, ringWeight);
     }
     else {
-      
-      int numBranchesIn = 4;
-      int numSplitsIn = 1;
-      float crookednessIn = 0.15;
-      float fatnessIn = 0.1;
       tree = new Tree();
-      tree.setParamTree(numBranchesIn, numSplitsIn, crookednessIn, fatnessIn, layerWidth, layerHeight, ringWeight);
     }
 
 
@@ -579,16 +537,6 @@ class Layer {
     int numBranches;
     int index = 0;
     float trunkLen;
-
-    int numBranchesIn;
-    int  numSplitsIn;
-    float crookednessIn;
-    float  fatnessIn;
-    float  layerWidth;
-    float  layerHeight;
-    float  ringWeight;
-
-    // ORIGINAL IMPLEMENTATION
     Tree(int numBranchesIn, Branch trunk) {
       numBranches = numBranchesIn;
       branches = new Branch[16];
@@ -604,7 +552,6 @@ class Layer {
       //println("trunks is "+trunkLen);
     }
 
-
     Tree() {
       numBranches = 0;
       branches = new Branch[16];
@@ -613,173 +560,71 @@ class Layer {
       }
     }
 
-    float randomDir(float p){
-      //iterate until dir found
-      while(1){
-        x = random(1);
-        if (p*(1-x)/(abs(x)+p) > random(1)){
-          if (random(1) > 0.5){
-            return TWO_PI*x/4;
-          }else{
-            return -TWO_PI*x/4;
-          }
-        }
-      }
-    }
-
-
-    void setParamTree(int numBranchesIn2, int numSplitsIn2, float crookednessIn2, float fatnessIn2, float layerWidth2, float layerHeight2, float ringWeight2) {
-      numBranchesIn = numBranchesIn2;
-      numBranches = numBranchesIn;
-      numSplitsIn = numSplitsIn2;
-      crookednessIn = crookednessIn2;
-      fatnessIn = fatnessIn2;
-      layerWidth = layerWidth2;
-      layerHeight = layerHeight2;
-      ringWeight = ringWeight2;
-
-    }
-
     void populateRandomBranches(Branch trunkIn, float sides) {
-      // branches = new Branch[16];
-      int splits[16];
-      for (int i = 0; i < 16; i++) {
-        splits[i] = 0;
+      int side;
+      if (sides > 0.2) {
+        side = 2;
+      }
+      else {
+        side = int(random(2));
       }
 
-      int i = 0;
+      if ((side == 1 || side == 2) && index < numBranches) {
+        float angle = myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[0])+random(HALF_PI);
+        float len = dist(trunkIn.verticies[2].x, trunkIn.verticies[2].y, trunkIn.verticies[0].x, trunkIn.verticies[0].y) * 0.7;
 
-      // keep trying to create a valid trunk-branch
-      while(i == 0){
-        // create the trunk
-        float mainDir = random(1)*TWO_PI;
-        float spX = (layerWidth/2) + (layerWidth/2 - ringWeight/2) * cos(mainDir);
-        float spY = (layerHeight/2) + (layerHeight/2 - ringWeight/2) * sin(mainDir);
+        if (len > (trunkLen*0.4)) {
 
-        float branchHeight = (layerWidth/2 - ringWeight/2) * 0.7;
-        
-        float trunkDir = mainDir+TWO_PI/2+randomDir(crookednessIn);
-        // float trunkDir = mainDir+TWO_PI/2+randomGaussian()*crookednessIn;
-        
-        //check if fits
-        PVector ending = new PVector(spX+branchHeight*cos(trunkDir),spY+branchHeight*sin(trunkDir));
-        if(dist(ending.x,ending.y,layerWidth/2,layerHeight/2) < (layerWidth/2 - ringWeight/2)){
-        // if(1){
-          // then create
-          branches[i] = new Branch(new PVector(spX,spY), trunkDir, branchHeight, fatnessIn);
-          // branches[0] = new Branch(new PVector(spX,spY), new PVector((layerWidth/2),(layerHeight/2)), new PVector((layerWidth),(layerHeight)));
-          splits[i] = numSplitsIn;
-          branchHeight *= 0.8;
-          i++;
+          //check if the random angle will fit inside the circle
+          if (dist((trunkIn.verticies[2].x + len * cos(angle)), (trunkIn.verticies[2].y + len * sin(angle)), width/2, height/2) < width/2) {
+            //println(index);
+            branches[index] = new Branch(
+            new PVector(trunkIn.verticies[2].x, trunkIn.verticies[2].y), 
+            new PVector(lerp(trunkIn.verticies[2].x, trunkIn.verticies[1].x, 0.3), lerp(trunkIn.verticies[2].y, trunkIn.verticies[1].y, 0.3)), 
+            new PVector((trunkIn.verticies[2].x + len * cos(angle)), (trunkIn.verticies[2].y + len * sin(angle))));
+            index ++;
+            populateRandomBranches(branches[index-1], (random(1)));
+            //check if the min or max angle fit inside the area
+          }
+          else if (dist((trunkIn.verticies[2].x + len * cos(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[0])+HALF_PI)), (trunkIn.verticies[2].y + len * sin(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[0])+HALF_PI)), width/2, height/2) < width/2 || 
+            dist((trunkIn.verticies[2].x + len * cos(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[0]))), (trunkIn.verticies[2].y + len * sin(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[0]))), width/2, height/2) < width/2) {
+            populateRandomBranches(trunkIn, 1);
+          }//otherwise don't do it.
         }
       }
-      // keep populating until have enough branches
-      while(i < numBranchesIn){
-        int patienceCount = 0;
-        // count how many vacancies for new branch placement
-        int vacancies = 0;
-        for(int j = 0; j < 16; j++){
-          vacancies += splits[j];
-        }
 
-        // choose one of them
-        int randVac = ceil(random(vacancies));
-        int branchId = 0;
-        int splitCumul = 0;
-        while(randVac >= splitCumul){
-          splitCumul += splits[branchId];
-          branchId++;
-        }
-        // branchId = randVac;
 
-        // // check if a branch would fit
-        float proposedDir = branches[branchId].getDir()+randomDir(crookednessIn);
-        // float proposedDir = branches[branchId].getDir();
-        PVector proposedEndPos = new PVector(branches[branchId].verticies[2].x+branchHeight*cos(proposedDir),branches[branchId].verticies[2].y+branchHeight*sin(proposedDir) );
-        if(dist(proposedEndPos.x,proposedEndPos.y,layerWidth/2,layerHeight/2) < (layerWidth/2 - ringWeight/2)){
-        // if(1){
-          // it does so add it
-          branches[i] = new Branch(branches[branchId].verticies[2],
-                                    proposedDir,
-                                    branchHeight, fatnessIn);
-          splits[i] = numSplitsIn;
-          splits[branchId]--;
-          branchHeight *= 0.7;
-          i++;
-        }else{
-          if(patienceCount++ > 100){
-            break;
+      if ((side == 0 || side == 2) && index < numBranches) {
+
+        float angle = myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[1])-random(HALF_PI);
+        float len = dist(trunkIn.verticies[2].x, trunkIn.verticies[2].y, trunkIn.verticies[1].x, trunkIn.verticies[1].y) * 0.7;
+        if (len > (trunkLen*0.4)) {
+
+          //check if the random angle will fit inside the circle
+          if (dist((trunkIn.verticies[2].x + len * cos(angle)), (trunkIn.verticies[2].y + len * sin(angle)), width/2, height/2) < width/2) {
+            //println(index);
+            branches[index] = new Branch(
+            new PVector(lerp(trunkIn.verticies[2].x, trunkIn.verticies[0].x, 0.3), lerp(trunkIn.verticies[2].y, trunkIn.verticies[0].y, 0.3)), 
+            new PVector(trunkIn.verticies[2].x, trunkIn.verticies[2].y), 
+            new PVector((trunkIn.verticies[2].x + len * cos(angle)), (trunkIn.verticies[2].y + len * sin(angle))));
+            index ++;
+            populateRandomBranches(branches[index-1], (random(1)));
+          }
+          else if (dist((trunkIn.verticies[2].x + len * cos(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[1])-HALF_PI)), (trunkIn.verticies[2].y + len * sin(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[1])-HALF_PI)), width/2, height/2) < width / 2 ||
+            dist((trunkIn.verticies[2].x + len * cos(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[1]))), (trunkIn.verticies[2].y + len * sin(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[1]))), width/2, height/2) < width / 2) {
+            populateRandomBranches(trunkIn, 0);
           }
         }
-        // i++;
       }
+      //if(index < numBranches){
+      //        if(side == 2){
+      //          populateRandomBranches(branches[index-1], int(random(3)));
+      //          populateRandomBranches(branches[index-2], int(random(3)));
+      //        }else{
+      //          populateRandomBranches(branches[index-1], int(random(3)));
+      //        }
+      //}
     }
-
-    // void populateRandomBranches(Branch trunkIn, float sides) {
-    //   int side;
-    //   if (sides > 0.2) {
-    //     side = 2;
-    //   }
-    //   else {
-    //     side = int(random(2));
-    //   }
-
-    //   if ((side == 1 || side == 2) && index < numBranches) {
-    //     float angle = myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[0])+random(HALF_PI);
-    //     float len = dist(trunkIn.verticies[2].x, trunkIn.verticies[2].y, trunkIn.verticies[0].x, trunkIn.verticies[0].y) * 0.7;
-
-    //     if (len > (trunkLen*0.4)) {
-
-    //       //check if the random angle will fit inside the circle
-    //       if (dist((trunkIn.verticies[2].x + len * cos(angle)), (trunkIn.verticies[2].y + len * sin(angle)), width/2, height/2) < width/2) {
-    //         //println(index);
-    //         branches[index] = new Branch(
-    //         new PVector(trunkIn.verticies[2].x, trunkIn.verticies[2].y), 
-    //         new PVector(lerp(trunkIn.verticies[2].x, trunkIn.verticies[1].x, 0.3), lerp(trunkIn.verticies[2].y, trunkIn.verticies[1].y, 0.3)), 
-    //         new PVector((trunkIn.verticies[2].x + len * cos(angle)), (trunkIn.verticies[2].y + len * sin(angle))));
-    //         index ++;
-    //         populateRandomBranches(branches[index-1], (random(1)));
-    //         //check if the min or max angle fit inside the area
-    //       }
-    //       else if (dist((trunkIn.verticies[2].x + len * cos(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[0])+HALF_PI)), (trunkIn.verticies[2].y + len * sin(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[0])+HALF_PI)), width/2, height/2) < width/2 || 
-    //         dist((trunkIn.verticies[2].x + len * cos(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[0]))), (trunkIn.verticies[2].y + len * sin(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[0]))), width/2, height/2) < width/2) {
-    //         populateRandomBranches(trunkIn, 1);
-    //       }//otherwise don't do it.
-    //     }
-    //   }
-
-
-    //   if ((side == 0 || side == 2) && index < numBranches) {
-
-    //     float angle = myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[1])-random(HALF_PI);
-    //     float len = dist(trunkIn.verticies[2].x, trunkIn.verticies[2].y, trunkIn.verticies[1].x, trunkIn.verticies[1].y) * 0.7;
-    //     if (len > (trunkLen*0.4)) {
-
-    //       //check if the random angle will fit inside the circle
-    //       if (dist((trunkIn.verticies[2].x + len * cos(angle)), (trunkIn.verticies[2].y + len * sin(angle)), width/2, height/2) < width/2) {
-    //         //println(index);
-    //         branches[index] = new Branch(
-    //         new PVector(lerp(trunkIn.verticies[2].x, trunkIn.verticies[0].x, 0.3), lerp(trunkIn.verticies[2].y, trunkIn.verticies[0].y, 0.3)), 
-    //         new PVector(trunkIn.verticies[2].x, trunkIn.verticies[2].y), 
-    //         new PVector((trunkIn.verticies[2].x + len * cos(angle)), (trunkIn.verticies[2].y + len * sin(angle))));
-    //         index ++;
-    //         populateRandomBranches(branches[index-1], (random(1)));
-    //       }
-    //       else if (dist((trunkIn.verticies[2].x + len * cos(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[1])-HALF_PI)), (trunkIn.verticies[2].y + len * sin(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[1])-HALF_PI)), width/2, height/2) < width / 2 ||
-    //         dist((trunkIn.verticies[2].x + len * cos(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[1]))), (trunkIn.verticies[2].y + len * sin(myAngleBetween(trunkIn.verticies[2], trunkIn.verticies[1]))), width/2, height/2) < width / 2) {
-    //         populateRandomBranches(trunkIn, 0);
-    //       }
-    //     }
-    //   }
-    //   // if(index < numBranches){
-    //   //        if(side == 2){
-    //   //          populateRandomBranches(branches[index-1], int(random(3)));
-    //   //          populateRandomBranches(branches[index-2], int(random(3)));
-    //   //        }else{
-    //   //          populateRandomBranches(branches[index-1], int(random(3)));
-    //   //        }
-    //   // }
-    // }
 
     void reset() {
       index = 1;
@@ -1051,6 +896,10 @@ class Game{
       paused = true;
     }
   }
+
+
+  
+
   
 //  public void display(){
 //    for(int i = 0; i < layers.size(); i++){
@@ -1059,54 +908,3 @@ class Game{
 //    }
 //  }
 }
-
-
-// This class allows to build trianges (their verices) based on some other parameters
-// class Triangle{
-//   public Pvector startPoint
-//   public float height;
-//   public float fatness;
-//   public float direction;
-
-//   public PVector a;
-//   public PVector b;
-//   public PVector c;
-
-//   public Triangle(Pvector sp, float h, float fat, float dir){
-//     startPoint = sp;
-//     height = h;
-//     fatness = fat;
-//     direction = dir;
-
-//     calcVertices();
-//   }
-
-//   public Triangle(PVector a, PVector b, PVector c){
-//     height = h;
-//     fatness = fat;
-//     direction = dir;
-
-//     calcFeatures();
-//   }
-
-//   public void calcVertices(){
-//     c.x = startPoint.x + height*cos(direction);
-//     c.y = startPoint.y + height*sin(direction);
-
-//     float breadth = fatness*height;
-//     a.x = startPoint.x - breadth*sin(direction);
-//     a.y = startPoint.y + breadth*cos(direction);
-//     b.x = startPoint.x + breadth*sin(direction);
-//     b.y = startPoint.y - breadth*cos(direction);
-//   }
-
-//   public void calcFeatures(){
-//     startPoint = new PVector(lerp(a.x, b.x, 0.5),lerp(a.y, b.y, 0.5));
-
-//     direction = atan2(b.y-a.y, b.x-a.x);
-
-//     height = dist(startPoint.x,startPoint.y,c.x,c.y);
-
-//     fatness = dist(a.x,a.y,b.x,b.y)/height;
-//   }
-// }
