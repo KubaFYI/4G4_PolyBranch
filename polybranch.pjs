@@ -58,6 +58,15 @@ void setup(){
   //Layer layer = new Layer(16, width, height);
   noLoop();
 
+  //test the csv file
+  //Table table = loadTable("test.csv","header");
+  //String s = table.getString(0,0);
+  //int val1 = table.getInt(0,1);
+  //TableRow row = table.addRow();
+  //Set the values of that row
+  //row.setString("message", "whyyyy");
+  //row.setFloat("line", 2.0);
+  //println("String is "+s+" and val1 is "+val1);
   processingIsReady();
   
 }
