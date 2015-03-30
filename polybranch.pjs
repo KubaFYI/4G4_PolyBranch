@@ -493,23 +493,23 @@ class Layer {
 
       // KUBA
       // 
-      tree = new Tree(11, new Branch(
-      new PVector(aX, aY), 
-      new PVector(bX, bY), 
-      new PVector(lerp(aX, layerWidth/2, 0.7), lerp(aY, layerHeight/2, 0.7))));
-      int numBranchesIn = 4;
-      int numSplitsIn = 1;
+      // tree = new Tree(11, new Branch(
+      // new PVector(aX, aY), 
+      // new PVector(bX, bY), 
+      // new PVector(lerp(aX, layerWidth/2, 0.7), lerp(aY, layerHeight/2, 0.7))));
+      int numBranchesIn = 6;
+      int numSplitsIn = 5;
       float crookednessIn = 0.15;
-      float fatnessIn = 0.1;
-      // tree = new Tree();
+      float fatnessIn = 0.01;
+      tree = new Tree();
       tree.setParamTree(numBranchesIn, numSplitsIn, crookednessIn, fatnessIn, layerWidth, layerHeight, ringWeight);
     }
     else {
       
-      int numBranchesIn = 4;
-      int numSplitsIn = 1;
-      float crookednessIn = 0.15;
-      float fatnessIn = 0.1;
+      int numBranchesIn = 6;
+      int numSplitsIn = 5;
+      float crookednessIn = 0.1;
+      float fatnessIn = 0.2;
       tree = new Tree();
       tree.setParamTree(numBranchesIn, numSplitsIn, crookednessIn, fatnessIn, layerWidth, layerHeight, ringWeight);
     }
@@ -686,37 +686,33 @@ class Layer {
       while(i < numBranchesIn){
         int patienceCount = 0;
         // count how many vacancies for new branch placement
-        int vacancies = 0;
-        for(int j = 0; j < 16; j++){
-          vacancies += splits[j];
-        }
+        // int vacancies = 0;
+        // for(int j = 0; j < 16; j++){
+        //   vacancies += splits[j];
+        // }
 
         // choose one of them
-        int randVac = ceil(random(vacancies));
-        int branchId = 0;
-        int splitCumul = 0;
-        while(randVac >= splitCumul){
-          splitCumul += splits[branchId];
-          branchId++;
+        int branchId = floor(random(16));
+        while(splits[branchId] <= 0){
+          // in case of a chosen branch has no vacancies choose another
+          branchId = floor(random(16));
         }
-        // branchId = randVac;
 
         // // check if a branch would fit
         float proposedDir = branches[branchId].getDir()+randomDir(crookednessIn);
         // float proposedDir = branches[branchId].getDir();
         PVector proposedEndPos = new PVector(branches[branchId].verticies[2].x+branchHeight*cos(proposedDir),branches[branchId].verticies[2].y+branchHeight*sin(proposedDir) );
         if(dist(proposedEndPos.x,proposedEndPos.y,layerWidth/2,layerHeight/2) < (layerWidth/2 - ringWeight/2)){
-        // if(1){
-          // it does so add it
+
           branches[i] = new Branch(branches[branchId].verticies[2],
                                     proposedDir,
                                     branchHeight, fatnessIn);
           splits[i] = numSplitsIn;
-          splits[branchId]--;
+          splits[branchId] = splits[branchId] - 1;
           branchHeight *= 0.7;
           i++;
         }else{
-          if(patienceCount++ > 100){
+          if(patienceCount++ > 1000){
             break;
           }
         }
